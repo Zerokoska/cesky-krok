@@ -1,0 +1,12 @@
+node_modules
+dist
+*.local
+.env
+.env.*
+!.env.example
+
+# Lesson content and audio are private: they live only locally and in Supabase Storage.
+content/
+
+supabase/.temp
+supabase/.branches
