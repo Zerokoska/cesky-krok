@@ -7,8 +7,8 @@ import { useAsync } from '../lib/useAsync';
 import { bestByExercise, useProgress } from '../lib/useProgress';
 import { stepExercises } from './LessonPage';
 
-function LessonReport({ lesson }: { lesson: Lesson }) {
-  const progress = useProgress(lesson.id);
+function LessonReport({ lesson, studentId }: { lesson: Lesson; studentId: string }) {
+  const progress = useProgress(lesson.id, studentId);
   if (progress.loading) return <Loading />;
   if (progress.error) return <ErrorBox error={progress.error} />;
   const { attempts, steps, vocab } = progress.data!;
@@ -143,7 +143,7 @@ export function TeacherPage() {
       )}
       {lessons.loading && <Loading />}
       {lessons.error && <ErrorBox error={lessons.error} />}
-      {student && lessons.data?.map((l) => <LessonReport key={l.id} lesson={l} />)}
+      {student && lessons.data?.map((l) => <LessonReport key={l.id} lesson={l} studentId={student.id} />)}
     </main>
   );
 }

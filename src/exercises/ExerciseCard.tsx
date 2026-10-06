@@ -45,7 +45,12 @@ export function ExerciseCard({ ex, lessonId, stepId, history = [], onSaved }: Pr
   const [round, setRound] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const started = useRef(Date.now());
+  // Timed from the first answer, not page load (all cards on a step mount together).
+  const started = useRef<number | null>(null);
+  const change: typeof setValue = (v) => {
+    if (started.current === null) started.current = Date.now();
+    setValue(v);
+  };
 
   const View = VIEWS[ex.type] as ComponentType<ExProps<typeof ex.type>>;
   const last = history[history.length - 1];
@@ -65,7 +70,8 @@ export function ExerciseCard({ ex, lessonId, stepId, history = [], onSaved }: Pr
         score: r.score,
         max: r.max,
         items: r.items,
-        durationSec: Math.round((Date.now() - started.current) / 1000),
+        // Capped so an answer left open for hours doesn't skew the stats.
+        durationSec: started.current === null ? 0 : Math.min(1800, Math.round((Date.now() - started.current) / 1000)),
       });
       onSaved?.();
     } catch (e) {
@@ -80,7 +86,7 @@ export function ExerciseCard({ ex, lessonId, stepId, history = [], onSaved }: Pr
     setResult(null);
     setReveal(false);
     setRound((r) => r + 1);
-    started.current = Date.now();
+    started.current = null;
   };
 
   const almost = result?.items.some((i) => i.almost);
@@ -106,7 +112,7 @@ export function ExerciseCard({ ex, lessonId, stepId, history = [], onSaved }: Pr
             <AudioPlayer audio={ex.audio} />
           </div>
         )}
-        <View ex={ex as never} value={value as never} onChange={setValue as never} result={result} reveal={reveal} seed={`${ex.id}:${round}`} />
+        <View ex={ex as never} value={value as never} onChange={change as never} result={result} reveal={reveal} seed={`${ex.id}:${round}`} />
       </div>
       <footer className="ex-foot">
         {!result ? (
@@ -138,7 +144,8 @@ export function ExerciseCard({ ex, lessonId, stepId, history = [], onSaved }: Pr
         <div className="ex-foot" style={{ background: 'var(--teacher-bg)', borderTop: '1px solid var(--line)' }}>
           <div className="small" style={{ width: '100%' }}>
             <b style={{ color: 'var(--teacher)' }}>Остання спроба учня</b> · {dateUk(last.createdAt)} · {last.score}/{last.max} ·{' '}
-            {plural(history.length, ['спроба', 'спроби', 'спроб'])} · {Math.max(1, Math.round(last.durationSec / 60))} хв
+            {plural(history.length, ['спроба', 'спроби', 'спроб'])}
+            {last.durationSec > 0 && ` · ${last.durationSec < 60 ? `${last.durationSec} с` : `${Math.round(last.durationSec / 60)} хв`}`}
             {mistakes.length > 0 && (
               <div style={{ marginTop: 6 }}>
                 {mistakes.slice(0, 12).map((m, i) => (

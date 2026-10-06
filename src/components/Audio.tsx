@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AudioRef } from '../content/schema';
 import { useApp } from '../data/context';
-import { claim, playSegment, release } from '../lib/audio';
+import { claim, playSegment, release, type Claim } from '../lib/audio';
 import { speak, useCzechVoice } from '../lib/tts';
 import { Icon } from './Icon';
 
@@ -41,6 +41,7 @@ export function AudioPlayer({ audio }: { audio: AudioRef }) {
   const [full, setFull] = useState(0);
   const [slow, setSlow] = useState(false);
   const elRef = useRef<HTMLAudioElement | null>(null);
+  const claimRef = useRef<Claim | null>(null);
   const from = audio.start ?? 0;
   const to = audio.end ?? full;
   const dur = Math.max(0, to - from);
@@ -52,6 +53,7 @@ export function AudioPlayer({ audio }: { audio: AudioRef }) {
     el.preload = 'metadata';
     el.src = url;
     elRef.current = el;
+    let poll: number | undefined;
     const onTime = () => {
       if (audio.end !== undefined && el.currentTime >= audio.end) {
         el.pause();
@@ -61,18 +63,24 @@ export function AudioPlayer({ audio }: { audio: AudioRef }) {
     };
     const onMeta = () => setFull(el.duration);
     const onPause = () => {
+      window.clearInterval(poll);
       setPlaying(false);
-      release(el);
+      release(claimRef.current);
     };
-    const onPlay = () => setPlaying(true);
+    const onPlay = () => {
+      setPlaying(true);
+      // timeupdate is too coarse to stop exactly at a segment end.
+      if (audio.end !== undefined) poll = window.setInterval(onTime, 40);
+    };
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('loadedmetadata', onMeta);
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onPause);
     el.addEventListener('play', onPlay);
     return () => {
+      window.clearInterval(poll);
       el.pause();
-      release(el);
+      release(claimRef.current);
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('loadedmetadata', onMeta);
       el.removeEventListener('pause', onPause);
@@ -89,7 +97,7 @@ export function AudioPlayer({ audio }: { audio: AudioRef }) {
       el.pause();
       return;
     }
-    claim(el, () => el.pause());
+    claimRef.current = claim(() => el.pause());
     el.playbackRate = slow ? 0.75 : 1;
     if (el.ended || el.currentTime < from || (audio.end !== undefined && el.currentTime >= audio.end)) el.currentTime = from;
     await el.play().catch(() => setPlaying(false));

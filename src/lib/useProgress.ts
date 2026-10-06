@@ -4,15 +4,16 @@ import { useAsync } from './useAsync';
 
 export type ProgressData = { attempts: Attempt[]; steps: StepProgress[]; vocab: VocabProgress[] };
 
-/** Progress of the current subject (the student, or yourself) for one lesson. */
-export function useProgress(lessonId: string) {
+/** Progress for one lesson of `userId`, or of the current subject (the student, or yourself). */
+export function useProgress(lessonId: string, userId?: string) {
   const { store, subjectId } = useApp();
+  const who = userId ?? subjectId;
   return useAsync<ProgressData>(async () => {
-    if (!subjectId) return { attempts: [], steps: [], vocab: [] };
-    const q = { userId: subjectId, lessonId };
+    if (!who) return { attempts: [], steps: [], vocab: [] };
+    const q = { userId: who, lessonId };
     const [attempts, steps, vocab] = await Promise.all([store.listAttempts(q), store.listStepProgress(q), store.listVocab(q)]);
     return { attempts, steps, vocab };
-  }, [store, subjectId, lessonId]);
+  }, [store, who, lessonId]);
 }
 
 /** Best score per exercise id. */

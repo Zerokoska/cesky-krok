@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { stopAll } from './audio';
 
 /** Czech speech synthesis via the browser (Web Speech API). */
 
@@ -10,7 +11,7 @@ function czechVoice(): SpeechSynthesisVoice | undefined {
 export function speak(text: string, rate = 0.9) {
   const voice = czechVoice();
   if (!voice) return;
-  speechSynthesis.cancel();
+  stopAll();
   const u = new SpeechSynthesisUtterance(text);
   u.voice = voice;
   u.lang = voice.lang;

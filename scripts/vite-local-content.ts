@@ -26,7 +26,8 @@ export function localContent(opts: { contentDir: string; audioDir: string }): Pl
         if (!root) return next();
 
         const file = path.resolve(root, rel);
-        if (!file.startsWith(path.resolve(root)) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+        const inside = path.relative(root, file);
+        if (!inside || inside.startsWith('..') || path.isAbsolute(inside) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
           res.statusCode = 404;
           return res.end('Not found');
         }

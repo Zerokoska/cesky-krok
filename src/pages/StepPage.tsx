@@ -52,6 +52,7 @@ export function StepPage() {
   const lesson = useLesson(lessonId);
   const progress = useProgress(lessonId);
   const [busy, setBusy] = useState(false);
+  const [doneError, setDoneError] = useState<string | null>(null);
   useScrollToExercise(!!lesson.data);
 
   if (lesson.loading) return <Loading />;
@@ -68,9 +69,12 @@ export function StepPage() {
 
   const toggleDone = async () => {
     setBusy(true);
+    setDoneError(null);
     try {
       await store.setStepDone(L.id, step.id, !done);
       progress.reload();
+    } catch (e) {
+      setDoneError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -112,6 +116,7 @@ export function StepPage() {
             </ErrorBoundary>
           ))}
 
+          {doneError && <ErrorBox error={`Не збереглося: ${doneError}`} />}
           <div className="row" style={{ marginTop: 8 }}>
             {prev ? (
               <Link className="btn" to={`/lekce/${L.id}/krok/${prev.id}`}>

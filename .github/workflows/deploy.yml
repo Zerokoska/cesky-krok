@@ -26,6 +26,9 @@ jobs:
       - run: npm ci
       # Lesson content is private (Supabase Storage), so content tests skip here.
       - run: npm test
+      # Without these the build would silently ship the local demo mode.
+      - name: Check Supabase variables
+        run: test -n "${{ vars.VITE_SUPABASE_URL }}" && test -n "${{ vars.VITE_SUPABASE_ANON_KEY }}"
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/

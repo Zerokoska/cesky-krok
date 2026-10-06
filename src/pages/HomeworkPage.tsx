@@ -11,21 +11,40 @@ import { stepExercises } from './LessonPage';
 
 function Photos({ paths, onRemove }: { paths: string[]; onRemove?: (p: string) => void }) {
   const { store } = useApp();
-  const urls = useAsync(() => Promise.all(paths.map((p) => store.photoUrl(p))), [store, paths.join('|')]);
+  // Links are looked up per path, so removing a photo never shifts images onto the wrong button.
+  const [urls, setUrls] = useState<Record<string, string | null>>({});
   const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    for (const p of paths) {
+      if (p in urls) continue;
+      store.photoUrl(p).then(
+        (u) => alive && setUrls((m) => ({ ...m, [p]: u })),
+        () => alive && setUrls((m) => ({ ...m, [p]: null })),
+      );
+    }
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, paths.join('|')]);
   if (!paths.length) return null;
   return (
     <>
       <div className="photos">
-        {urls.data?.map((u, i) => (
-          <div key={paths[i]} style={{ position: 'relative' }}>
-            <img src={u} alt={`Фото ${i + 1}`} onClick={() => setOpen(u)} />
+        {paths.map((p, i) => (
+          <div key={p} style={{ position: 'relative' }}>
+            {urls[p] ? (
+              <img src={urls[p]!} alt={`Фото ${i + 1}`} onClick={() => setOpen(urls[p]!)} />
+            ) : (
+              <div className="photos-ph">{urls[p] === null ? 'не завантажилось' : '…'}</div>
+            )}
             {onRemove && (
               <button
                 type="button"
                 className="icon-btn"
                 style={{ position: 'absolute', top: 4, right: 4, width: 28, height: 28 }}
-                onClick={() => onRemove(paths[i])}
+                onClick={() => onRemove(p)}
                 title="Прибрати"
               >
                 <Icon name="x" size={14} />
@@ -152,6 +171,7 @@ function ReviewForm({ sub, reload }: { sub: Submission; reload: () => void }) {
   const [comment, setComment] = useState(sub.teacherComment ?? '');
   const [grade, setGrade] = useState(sub.grade ?? '');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   return (
     <form
       className="stack"
@@ -159,14 +179,18 @@ function ReviewForm({ sub, reload }: { sub: Submission; reload: () => void }) {
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
+        setError(null);
         try {
           await store.reviewSubmission(sub.id, { teacherComment: comment, grade });
           reload();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err));
         } finally {
           setBusy(false);
         }
       }}
     >
+      {error && <ErrorBox error={`Відгук не збережено: ${error}`} />}
       <textarea
         className="input"
         data-cz=""
@@ -200,8 +224,12 @@ function TeacherHomework({ h, subs, reload }: { h: Homework; subs: Submission[];
           title="Видалити завдання"
           onClick={async () => {
             if (!confirm(`Видалити «${h.title}» разом із відповідями?`)) return;
-            await store.deleteHomework(h.id);
-            reload();
+            try {
+              await store.deleteHomework(h.id);
+              reload();
+            } catch (err) {
+              alert(`Не вдалося видалити: ${err instanceof Error ? err.message : err}`);
+            }
           }}
         >
           <Icon name="trash" />

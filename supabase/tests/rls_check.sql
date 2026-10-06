@@ -44,7 +44,9 @@ end $$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
-insert into public.homework (id, lesson_id, title) values ('00000000-0000-0000-0000-00000000c001', '01', 'Sešit s. 4');
+insert into public.homework (id, lesson_id, title) values
+  ('00000000-0000-0000-0000-00000000c001', '01', 'Sešit s. 4'),
+  ('00000000-0000-0000-0000-00000000c002', '01', 'Sešit s. 5');
 insert into results select 'teacher sees student attempts', count(*) = 1, count(*)::text from public.attempts;
 insert into results select 'teacher sees all profiles', count(*) = 3, count(*)::text from public.profiles;
 
@@ -57,6 +59,10 @@ values ('00000000-0000-0000-0000-00000000c001', 'jsem, jsi', '10/10', 'self', 'r
 insert into results select 'student cannot self-grade on insert', grade is null and status = 'submitted', coalesce(grade, '∅') || ' ' || status from public.submissions;
 update public.submissions set grade = 'A+', answer_text = 'jsem, jsi, je';
 insert into results select 'student update keeps grade empty', grade is null and answer_text = 'jsem, jsi, je', coalesce(grade, '∅') from public.submissions;
+update public.submissions set homework_id = '00000000-0000-0000-0000-00000000c002', submitted_at = '2000-01-01';
+insert into results select 'student cannot move or backdate a submission',
+  homework_id = '00000000-0000-0000-0000-00000000c001' and submitted_at > now() - interval '1 hour',
+  homework_id::text || ' ' || submitted_at::text from public.submissions;
 
 -- second student sees nothing of the first
 reset role;
@@ -64,6 +70,11 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000b2","role":"authenticated"}', true);
 insert into results select 'other student cannot see attempts', count(*) = 0, count(*)::text from public.attempts;
 insert into results select 'other student cannot see submissions', count(*) = 0, count(*)::text from public.submissions;
+update public.submissions set answer_text = 'overwritten' where student_id = '00000000-0000-0000-0000-0000000000b1';
+reset role;
+insert into results select 'other student cannot overwrite an answer', answer_text = 'jsem, jsi, je', answer_text from public.submissions
+  where student_id = '00000000-0000-0000-0000-0000000000b1';
+set local role authenticated;
 
 -- teacher reviews; answer stays untouched
 reset role;

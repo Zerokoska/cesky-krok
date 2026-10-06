@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { SpeakButton } from '../components/Audio';
 import { ErrorBox, Loading } from '../components/ui';
@@ -37,19 +37,24 @@ export function VocabPage() {
     return { ...m, ...local };
   }, [progress.data, local]);
 
-  const words = lesson.data?.vocabulary ?? [];
+  const words = useMemo(() => lesson.data?.vocabulary ?? [], [lesson.data]);
   const pages = [...new Set(words.map((w) => w.page))];
   const filtered = words.filter((w) => (page === 'all' || w.page === page) && (!onlyUnknown || status[w.id] !== true));
-  const deck = useMemo(
-    () => shuffledIndices(filtered.length, `${page}:${onlyUnknown}:${round}`).map((i) => filtered[i]),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filtered.length, page, onlyUnknown, round],
-  );
 
+  // The deck is fixed when a round starts, so marking "Знаю" doesn't reshuffle it mid-round.
+  const statusRef = useRef(status);
+  statusRef.current = status;
+  const progressReady = !!progress.data;
+  const [deckIds, setDeckIds] = useState<string[]>([]);
   useEffect(() => {
+    if (!words.length || !progressReady) return;
+    const pool = words.filter((w) => (page === 'all' || w.page === page) && (!onlyUnknown || statusRef.current[w.id] !== true));
+    setDeckIds(shuffledIndices(pool.length, `${page}:${onlyUnknown}:${round}`).map((i) => pool[i].id));
     setPos(0);
     setFlipped(false);
-  }, [page, onlyUnknown, round, mode]);
+  }, [words, progressReady, page, onlyUnknown, round]);
+  const byId = useMemo(() => new Map(words.map((w) => [w.id, w])), [words]);
+  const deck = deckIds.map((id) => byId.get(id)!).filter(Boolean);
 
   if (lesson.loading) return <Loading />;
   if (lesson.error || !lesson.data) return <main className="page"><ErrorBox error={lesson.error ?? 'Урок не знайдено'} /></main>;

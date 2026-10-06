@@ -52,7 +52,8 @@ export class SupabaseContentSource implements ContentSource {
   async audioUrl(track: string) {
     const hit = this.urls.get(track);
     if (hit && hit.expires > Date.now()) return hit.url;
-    const ttl = 6 * 3600;
+    // Long enough for a tab left open overnight; the bucket itself stays private.
+    const ttl = 24 * 3600;
     const { data, error } = await this.sb.storage.from('audio').createSignedUrl(`${track}.mp3`, ttl);
     if (error) throw new Error(`Аудіо ${track}: ${error.message}`);
     this.urls.set(track, { url: data.signedUrl, expires: Date.now() + (ttl - 600) * 1000 });

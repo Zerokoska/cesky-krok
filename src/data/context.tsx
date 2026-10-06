@@ -73,7 +73,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setStudent(null);
       return;
     }
-    store.listStudents().then((s) => setStudent(s[0] ?? null));
+    store.listStudents().then(
+      (s) => setStudent(s[0] ?? null),
+      (e) => console.error('Could not load students', e),
+    );
   }, [profile, store]);
 
   const setView = useCallback((v: View) => {

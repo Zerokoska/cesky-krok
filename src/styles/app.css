@@ -1285,6 +1285,19 @@ textarea.input {
   cursor: zoom-in;
 }
 
+.photos-ph {
+  width: 110px;
+  height: 110px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 6px;
+}
+
 .lightbox {
   position: fixed;
   inset: 0;

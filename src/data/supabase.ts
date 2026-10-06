@@ -92,14 +92,25 @@ export class SupabaseDataStore implements DataStore {
   }
 
   onAuthChange(cb: (p: Profile | null) => void) {
+    let emitted: string | null = null;
     const { data } = this.sb.auth.onAuthStateChange((_event, session) => {
       // Supabase advises not to await its own calls inside this callback.
       setTimeout(async () => {
         if (!session) {
           this.profile = null;
+          emitted = null;
           cb(null);
-        } else if (session.user.id !== this.profile?.id) {
-          cb(await this.loadProfile(session.user.id));
+          return;
+        }
+        // Token refreshes re-fire this event; only a different user needs a new profile.
+        if (session.user.id === emitted) return;
+        try {
+          const p = this.profile?.id === session.user.id ? this.profile : await this.loadProfile(session.user.id);
+          emitted = session.user.id;
+          cb(p);
+        } catch (e) {
+          // signIn() reports this to the user; here we only avoid an unhandled rejection.
+          console.error('Profile load failed', e);
         }
       });
     });
@@ -107,8 +118,15 @@ export class SupabaseDataStore implements DataStore {
   }
 
   async signIn(email: string, password: string) {
-    const { error } = await this.sb.auth.signInWithPassword({ email, password });
+    const { data, error } = await this.sb.auth.signInWithPassword({ email, password });
     if (error) throw new Error(friendlyAuthError(error.message));
+    let profile: Profile | null;
+    try {
+      profile = await this.loadProfile(data.user.id);
+    } catch (e) {
+      throw new Error(`Вхід виконано, але профіль не завантажився: ${e instanceof Error ? e.message : e}. Спробуйте ще раз.`);
+    }
+    if (!profile) throw new Error('Профіль не знайдено. Зверніться до вчителя.');
   }
 
   async signUp(email: string, password: string, displayName: string) {
@@ -220,7 +238,10 @@ export class SupabaseDataStore implements DataStore {
   }
 
   async deleteHomework(id: string) {
+    const subs = check(await this.sb.from('submissions').select('photo_paths').eq('homework_id', id)) as Row[];
+    const photos = subs.flatMap((s) => (s.photo_paths as string[]) ?? []);
     check(await this.sb.from('homework').delete().eq('id', id));
+    if (photos.length) await this.sb.storage.from('homework').remove(photos);
   }
 
   async listSubmissions(q: { homeworkId?: string; studentId?: string }) {
@@ -232,27 +253,41 @@ export class SupabaseDataStore implements DataStore {
 
   async submitHomework(homeworkId: string, answerText: string, newPhotos: File[], keepPhotos: string[]) {
     const userId = await this.uid();
+    const { data: prev } = await this.sb
+      .from('submissions')
+      .select('photo_paths')
+      .match({ homework_id: homeworkId, student_id: userId })
+      .maybeSingle();
     const uploaded: string[] = [];
-    for (const f of newPhotos) {
-      const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${userId}/${homeworkId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await this.sb.storage.from('homework').upload(path, f, { contentType: f.type || 'image/jpeg' });
-      if (error) throw new Error(`Фото не завантажилось: ${error.message}`);
-      uploaded.push(path);
+    const removeFiles = async (paths: string[]) => {
+      if (paths.length) await this.sb.storage.from('homework').remove(paths);
+    };
+    try {
+      for (const f of newPhotos) {
+        const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `${userId}/${homeworkId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await this.sb.storage.from('homework').upload(path, f, { contentType: f.type || 'image/jpeg' });
+        if (error) throw new Error(`Фото не завантажилось: ${error.message}`);
+        uploaded.push(path);
+      }
+      check(
+        await this.sb.from('submissions').upsert(
+          {
+            homework_id: homeworkId,
+            student_id: userId,
+            answer_text: answerText,
+            photo_paths: [...keepPhotos, ...uploaded],
+            status: 'submitted',
+          },
+          { onConflict: 'homework_id,student_id' },
+        ),
+      );
+    } catch (e) {
+      await removeFiles(uploaded);
+      throw e;
     }
-    check(
-      await this.sb.from('submissions').upsert(
-        {
-          homework_id: homeworkId,
-          student_id: userId,
-          answer_text: answerText,
-          photo_paths: [...keepPhotos, ...uploaded],
-          status: 'submitted',
-          submitted_at: new Date().toISOString(),
-        },
-        { onConflict: 'homework_id,student_id' },
-      ),
-    );
+    // Photos the student removed from the answer.
+    await removeFiles(((prev?.photo_paths as string[] | undefined) ?? []).filter((p) => !keepPhotos.includes(p)));
   }
 
   async reviewSubmission(id: string, review: { teacherComment: string; grade: string }) {

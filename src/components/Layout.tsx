@@ -1,12 +1,19 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../data/context';
+import { stopAll } from '../lib/audio';
 import { CzechKeyboard } from './CzechKeyboard';
+import { ErrorBoundary } from './ErrorBoundary';
 import { Icon, Logo } from './Icon';
 
 export function Layout() {
   const { profile, store, view, setView, showTranslations, setShowTranslations, student } = useApp();
   const nav = useNavigate();
+  const { pathname } = useLocation();
   const teacher = profile?.role === 'teacher';
+
+  // Leaving a page silences whatever it was playing.
+  useEffect(() => stopAll, [pathname]);
 
   return (
     <>
@@ -56,7 +63,9 @@ export function Layout() {
           </div>
         </div>
       </header>
-      <Outlet />
+      <ErrorBoundary key={pathname}>
+        <Outlet />
+      </ErrorBoundary>
       <CzechKeyboard />
     </>
   );
