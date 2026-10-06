@@ -57,7 +57,8 @@ export function GapFill({ ex, value, onChange, result, reveal }: ExProps<'gapfil
     return { it, parts: p, offset };
   });
 
-  const set = (i: number, g: number, v: string) => onChange(value.map((row, r) => (r === i ? row.map((c, k) => (k === g ? v : c)) : row)));
+  const set = (i: number, g: number, v: string) =>
+    onChange((prev) => prev.map((row, r) => (r === i ? row.map((c, k) => (k === g ? v : c)) : row)));
 
   const used = new Set(value.flat().map((v) => v.trim().toLowerCase()));
 

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b",
-    "upload-content": "node scripts/upload-content.mjs"
+    "content": "node scripts/build-content.ts",
+    "upload-content": "node scripts/upload-content.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

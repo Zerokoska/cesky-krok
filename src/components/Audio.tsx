@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AudioRef } from '../content/schema';
 import { useApp } from '../data/context';
-import { audioFor, claim, playSegment, release } from '../lib/audio';
+import { claim, playSegment, release } from '../lib/audio';
 import { speak, useCzechVoice } from '../lib/tts';
 import { Icon } from './Icon';
 
@@ -30,49 +30,68 @@ function useAudioUrl(track: string) {
   return { url, error };
 }
 
-/** Full-track player with a seek bar, as used for the textbook recordings. */
+/**
+ * Player with a seek bar for a textbook recording. With `start`/`end` it plays
+ * only that part and the bar covers just that range.
+ */
 export function AudioPlayer({ audio }: { audio: AudioRef }) {
   const { url, error } = useAudioUrl(audio.track);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
-  const [dur, setDur] = useState(0);
+  const [full, setFull] = useState(0);
   const [slow, setSlow] = useState(false);
   const elRef = useRef<HTMLAudioElement | null>(null);
+  const from = audio.start ?? 0;
+  const to = audio.end ?? full;
+  const dur = Math.max(0, to - from);
 
   useEffect(() => {
     if (!url) return;
-    const el = audioFor(url);
+    // Own element per player so two players of one track keep separate positions.
+    const el = new Audio();
+    el.preload = 'metadata';
+    el.src = url;
     elRef.current = el;
-    const onTime = () => setTime(el.currentTime);
-    const onMeta = () => setDur(el.duration);
-    const onPause = () => setPlaying(false);
+    const onTime = () => {
+      if (audio.end !== undefined && el.currentTime >= audio.end) {
+        el.pause();
+        el.currentTime = from;
+      }
+      setTime(Math.max(0, el.currentTime - from));
+    };
+    const onMeta = () => setFull(el.duration);
+    const onPause = () => {
+      setPlaying(false);
+      release(el);
+    };
     const onPlay = () => setPlaying(true);
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('loadedmetadata', onMeta);
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onPause);
     el.addEventListener('play', onPlay);
-    if (el.readyState >= 1) setDur(el.duration);
     return () => {
+      el.pause();
+      release(el);
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('loadedmetadata', onMeta);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onPause);
       el.removeEventListener('play', onPlay);
+      el.src = '';
     };
-  }, [url]);
+  }, [url, from, audio.end]);
 
   const toggle = async () => {
     const el = elRef.current;
     if (!el) return;
     if (!el.paused) {
       el.pause();
-      release(el);
       return;
     }
     claim(el, () => el.pause());
     el.playbackRate = slow ? 0.75 : 1;
-    if (el.ended) el.currentTime = 0;
+    if (el.ended || el.currentTime < from || (audio.end !== undefined && el.currentTime >= audio.end)) el.currentTime = from;
     await el.play().catch(() => setPlaying(false));
   };
 
@@ -80,7 +99,7 @@ export function AudioPlayer({ audio }: { audio: AudioRef }) {
     const el = elRef.current;
     if (!el || !dur) return;
     const r = e.currentTarget.getBoundingClientRect();
-    el.currentTime = Math.max(0, Math.min(dur, ((e.clientX - r.left) / r.width) * dur));
+    el.currentTime = from + Math.max(0, Math.min(dur, ((e.clientX - r.left) / r.width) * dur));
   };
 
   const toggleSlow = () => {

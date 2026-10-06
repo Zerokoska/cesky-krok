@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { Bi } from '../components/Bi';
 import { Icon } from '../components/Icon';
-import { ErrorBox, Loading, Progress, ScoreBadge, TeacherPanel } from '../components/ui';
+import { ErrorBox, Loading, Progress, ScoreBadge, TeacherPanel, plural } from '../components/ui';
 import type { Exercise, Lesson, Step } from '../content/schema';
 import { useApp } from '../data/context';
 import { useAsync } from '../lib/useAsync';
@@ -63,7 +63,8 @@ export function LessonPage() {
                         {s.book.exercises ? `, ${s.book.exercises}` : ''}
                       </span>
                       <span>
-                        {exs.length} вправ{s.audio.length ? ` · ${s.audio.length} аудіо` : ''}
+                        {plural(exs.length, ['вправа', 'вправи', 'вправ'])}
+                        {s.audio.length ? ` · ${s.audio.length} аудіо` : ''}
                       </span>
                     </div>
                   </div>

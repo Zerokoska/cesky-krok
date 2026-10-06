@@ -10,7 +10,11 @@ export function Match({ ex, value, onChange, result, reveal, seed }: ExProps<'ma
     if (active === null) return;
     const next = value.map((v) => (v === rightIdx ? null : v));
     next[active] = rightIdx;
-    onChange(next);
+    onChange((prev) => {
+      const n = prev.map((v) => (v === rightIdx ? null : v));
+      n[active] = rightIdx;
+      return n;
+    });
     const free = next.findIndex((v, i) => v === null && i !== active);
     setActive(free >= 0 ? free : null);
   };

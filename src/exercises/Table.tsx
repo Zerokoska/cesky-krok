@@ -36,7 +36,7 @@ export function Table({ ex, value, onChange, result, reveal }: ExProps<'table'>)
                     ) : (
                       <GapInput
                         value={value[k] ?? ''}
-                        onChange={(v) => onChange({ ...value, [k]: v })}
+                        onChange={(v) => onChange((prev) => ({ ...prev, [k]: v }))}
                         result={result?.items[indexOf.get(k)!]}
                         reveal={reveal}
                         expected={cell}

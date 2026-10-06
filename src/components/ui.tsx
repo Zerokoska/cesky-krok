@@ -50,5 +50,13 @@ export function TeacherPanel({ title, children }: { title: string; children: Rea
 
 export const percent = (score: number, max: number) => (max ? Math.round((score / max) * 100) : 0);
 
+/** Ukrainian plural: plural(5, ['спроба', 'спроби', 'спроб']) → "5 спроб". */
+export function plural(n: number, [one, few, many]: [string, string, string]) {
+  const d = n % 10;
+  const dd = n % 100;
+  const word = d === 1 && dd !== 11 ? one : d >= 2 && d <= 4 && (dd < 12 || dd > 14) ? few : many;
+  return `${n} ${word}`;
+}
+
 export const dateUk = (iso: string) =>
   new Date(iso).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

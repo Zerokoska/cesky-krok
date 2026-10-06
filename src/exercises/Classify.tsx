@@ -32,7 +32,7 @@ export function Classify({ ex, value, onChange, result, reveal, seed }: ExProps<
                     key={c.id}
                     className={`opt${cls}`}
                     disabled={!!result}
-                    onClick={() => onChange(value.map((v, j) => (j === i ? c.id : v)))}
+                    onClick={() => onChange((prev) => prev.map((v, j) => (j === i ? c.id : v)))}
                   >
                     {c.label.cs}
                   </button>

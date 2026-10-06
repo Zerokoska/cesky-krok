@@ -2,11 +2,10 @@ import { Bi } from '../components/Bi';
 import type { ExProps } from './types';
 
 export function Multi({ ex, value, onChange, result, reveal }: ExProps<'multi'>) {
-  const toggle = (g: number, k: number) => {
-    const cur = value[g] ?? [];
-    const next = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
-    onChange(value.map((v, j) => (j === g ? next : v)));
-  };
+  const toggle = (g: number, k: number) =>
+    onChange((prev) =>
+      prev.map((cur, j) => (j !== g ? cur : (cur ?? []).includes(k) ? cur.filter((x) => x !== k) : [...(cur ?? []), k])),
+    );
   return (
     <div>
       {ex.groups.map((g, gi) => (

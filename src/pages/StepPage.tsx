@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { AudioPlayer } from '../components/Audio';
 import { Bi } from '../components/Bi';
 import { BlockView } from '../components/BlockView';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Icon } from '../components/Icon';
 import { BookRef, ErrorBox, Loading, TeacherPanel } from '../components/ui';
 import type { OnlineActivity } from '../content/schema';
@@ -101,12 +102,14 @@ export function StepPage() {
             <section className="card stack" style={{ gap: 8 }}>
               <h3 style={{ margin: 0 }}>Nahrávky</h3>
               {step.audio.map((a, i) => (
-                <AudioPlayer key={i} audio={a} />
+                <AudioPlayer key={`${step.id}:${i}`} audio={a} />
               ))}
             </section>
           )}
           {step.blocks.map((b, i) => (
-            <BlockView key={i} block={b} ctx={ctx} />
+            <ErrorBoundary key={`${step.id}:${b.kind === 'exercise' ? b.exercise.id : i}`}>
+              <BlockView block={b} ctx={ctx} />
+            </ErrorBoundary>
           ))}
 
           <div className="row" style={{ marginTop: 8 }}>

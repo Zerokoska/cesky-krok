@@ -2,7 +2,7 @@ import { useRef, useState, type ComponentType } from 'react';
 import { Bi } from '../components/Bi';
 import { AudioPlayer } from '../components/Audio';
 import { Icon } from '../components/Icon';
-import { ScoreBadge, dateUk } from '../components/ui';
+import { ScoreBadge, dateUk, plural } from '../components/ui';
 import type { Exercise } from '../content/schema';
 import { useApp } from '../data/context';
 import type { Attempt } from '../data/types';
@@ -138,7 +138,7 @@ export function ExerciseCard({ ex, lessonId, stepId, history = [], onSaved }: Pr
         <div className="ex-foot" style={{ background: 'var(--teacher-bg)', borderTop: '1px solid var(--line)' }}>
           <div className="small" style={{ width: '100%' }}>
             <b style={{ color: 'var(--teacher)' }}>Остання спроба учня</b> · {dateUk(last.createdAt)} · {last.score}/{last.max} ·{' '}
-            {history.length} спроб · {Math.round(last.durationSec / 60)} хв
+            {plural(history.length, ['спроба', 'спроби', 'спроб'])} · {Math.max(1, Math.round(last.durationSec / 60))} хв
             {mistakes.length > 0 && (
               <div style={{ marginTop: 6 }}>
                 {mistakes.slice(0, 12).map((m, i) => (

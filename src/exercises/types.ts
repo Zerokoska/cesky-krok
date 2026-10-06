@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react';
 import type { Exercise, ExerciseOf } from '../content/schema';
 import { gapAnswers } from '../lib/gaps';
 import type { AnyResponse, GradeResult, ResponseFor } from '../lib/grade';
@@ -5,7 +6,8 @@ import type { AnyResponse, GradeResult, ResponseFor } from '../lib/grade';
 export type ExProps<T extends Exercise['type']> = {
   ex: ExerciseOf<T>;
   value: ResponseFor[T];
-  onChange: (v: ResponseFor[T]) => void;
+  /** Accepts an updater so rapid changes never overwrite each other. */
+  onChange: Dispatch<SetStateAction<ResponseFor[T]>>;
   /** Set after "Перевірити"; components switch to feedback mode. */
   result: GradeResult | null;
   /** Show the key (teacher, or the student asked for answers). */

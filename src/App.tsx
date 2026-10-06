@@ -1,4 +1,5 @@
 import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { Loading } from './components/ui';
 import { AppProvider, useApp } from './data/context';
@@ -25,7 +26,13 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<RequireAuth />}>
-            <Route element={<Layout />}>
+            <Route
+              element={
+                <ErrorBoundary>
+                  <Layout />
+                </ErrorBoundary>
+              }
+            >
               <Route index element={<Home />} />
               <Route path="lekce/:lessonId" element={<LessonPage />} />
               <Route path="lekce/:lessonId/krok/:stepId" element={<StepPage />} />

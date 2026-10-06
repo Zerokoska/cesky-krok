@@ -19,7 +19,7 @@ export function Dictation({ ex, value, onChange, result, reveal }: ExProps<'dict
             {it.hint && <span className="muted">{it.hint}</span>}
             <GapInput
               value={value[i] ?? ''}
-              onChange={(v) => onChange(value.map((x, j) => (j === i ? v : x)))}
+              onChange={(v) => onChange((prev) => prev.map((x, j) => (j === i ? v : x)))}
               result={result?.items[i]}
               reveal={reveal}
               expected={it.answer}

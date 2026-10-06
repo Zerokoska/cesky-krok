@@ -18,7 +18,7 @@ export function Order({ ex, value, onChange, result, reveal, seed }: ExProps<'or
               key={idx}
               className={`order-item${st}`}
               disabled={!!result}
-              onClick={() => onChange(value.filter((v) => v !== idx))}
+              onClick={() => onChange((prev) => prev.filter((v) => v !== idx))}
               title="Прибрати"
             >
               <span className="n">{pos + 1}.</span>
@@ -30,7 +30,7 @@ export function Order({ ex, value, onChange, result, reveal, seed }: ExProps<'or
       {!result && remaining.length > 0 && (
         <div className="stack" style={{ gap: 6 }}>
           {remaining.map((idx) => (
-            <button type="button" key={idx} className="order-item" onClick={() => onChange([...value, idx])}>
+            <button type="button" key={idx} className="order-item" onClick={() => onChange((prev) => (prev.includes(idx) ? prev : [...prev, idx]))}>
               <span className="n">+</span>
               {ex.items[idx]}
             </button>
