@@ -8,7 +8,8 @@ import type { DataStore } from './data/types';
 function create(): { store: DataStore; content: ContentSource } {
   const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-  if (url && key) {
+  const forceLocal = import.meta.env.VITE_BACKEND === 'local';
+  if (url && key && !forceLocal) {
     const sb = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } });
     return { store: new SupabaseDataStore(sb), content: new SupabaseContentSource(sb) };
   }

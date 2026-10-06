@@ -4,6 +4,7 @@ dist
 .env
 .env.*
 !.env.example
+!.env.demo
 
 # Lesson content and audio are private: they live only locally and in Supabase Storage.
 content/
