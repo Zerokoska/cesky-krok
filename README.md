@@ -36,8 +36,13 @@ roles plus a password; each role maps to an internal login in `src/config.ts`
 (`ucitel@cesky-krok.invalid`, `studentka@cesky-krok.invalid`). Both are on the
 `allowed_emails` list, which gives the account its role when it is created.
 
-Create or reset an account in the Supabase dashboard → Authentication → Users →
-*Add user* → *Create new user*: that login, a password, *Auto Confirm User* on.
+Create an account, or set a new password, from a terminal (the password is typed, hidden, and not stored):
+
+```bash
+node scripts/account.ts teacher   # or: student
+node scripts/account.ts status
+```
+
 To add another role login: `node scripts/allow-email.ts <login> <teacher|student> "Name"` first.
 
 ## Adding a lesson
