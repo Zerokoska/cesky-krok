@@ -131,14 +131,14 @@ export function TeacherPage() {
     <main className="page">
       <h1>Кабінет учителя</h1>
       <div className="row" style={{ marginBottom: 12 }}>
-        <span className="chip teacher">Учень: {student ? `${student.displayName} (${student.email})` : 'ще не зареєструвався'}</span>
+        <span className="chip teacher">Учениця: {student ? student.displayName : 'ще жодного разу не входила'}</span>
         <Link to="/ukoly" className="chip">
           Домашка на перевірку: {pending.data ?? '…'}
         </Link>
       </div>
       {!student && (
         <div className="note small" style={{ marginBottom: 16 }}>
-          Коли учень зареєструється (його email має бути в списку дозволених), тут з'явиться його прогрес.
+          Акаунт учениці ще не створено. Коли він з’явиться, тут буде її прогрес.
         </div>
       )}
       {lessons.loading && <Loading />}

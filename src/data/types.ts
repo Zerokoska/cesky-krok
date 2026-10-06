@@ -56,7 +56,6 @@ export interface DataStore {
   getSession(): Promise<Profile | null>;
   onAuthChange(cb: (p: Profile | null) => void): () => void;
   signIn(email: string, password: string): Promise<void>;
-  signUp(email: string, password: string, displayName: string): Promise<void>;
   signOut(): Promise<void>;
   listStudents(): Promise<Profile[]>;
 

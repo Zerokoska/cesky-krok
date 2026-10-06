@@ -45,7 +45,7 @@ export function Layout() {
                 </button>
               </div>
             )}
-            <span className="muted small" title={profile?.email}>
+            <span className="muted small">
               {profile?.displayName}
               {teacher && student ? ` · учень: ${student.displayName}` : ''}
             </span>

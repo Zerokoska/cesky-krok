@@ -43,7 +43,7 @@ export function Home() {
       </p>
       {isTeacherView && !student && (
         <div className="note small" style={{ marginBottom: 16 }}>
-          Учень ще не зареєструвався — його прогрес з'явиться тут після першого входу.
+          Акаунт учениці ще не створено — її прогрес з’явиться тут після першого входу.
         </div>
       )}
       {lessons.loading && <Loading />}

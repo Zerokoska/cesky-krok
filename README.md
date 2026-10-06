@@ -23,12 +23,22 @@ npm run dev:demo         # local demo mode: localStorage, role picker, local con
 npm test                 # graders + content checks
 npm run content          # content/src/*.mjs → content/lessons/*.json (validated)
 npm run upload-content   # push lessons + their audio to Supabase Storage
-node scripts/allow-email.ts someone@example.com student "Name"
 npx supabase db query --linked -f supabase/tests/rls_check.sql   # RLS smoke test (rolls back)
 ```
 
 `app/.env.local` (never committed) holds `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
 `SUPABASE_DB_PASSWORD`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+
+## Accounts
+
+There is no sign-up (disabled in Supabase Auth). The sign-in screen offers two
+roles plus a password; each role maps to an internal login in `src/config.ts`
+(`ucitel@cesky-krok.invalid`, `studentka@cesky-krok.invalid`). Both are on the
+`allowed_emails` list, which gives the account its role when it is created.
+
+Create or reset an account in the Supabase dashboard → Authentication → Users →
+*Add user* → *Create new user*: that login, a password, *Auto Confirm User* on.
+To add another role login: `node scripts/allow-email.ts <login> <teacher|student> "Name"` first.
 
 ## Adding a lesson
 

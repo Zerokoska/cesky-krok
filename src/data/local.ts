@@ -99,10 +99,6 @@ export class LocalDataStore implements DataStore {
     throw new Error('У локальному режимі оберіть роль.');
   }
 
-  async signUp() {
-    throw new Error('У локальному режимі оберіть роль.');
-  }
-
   async signOut() {
     this.update((db) => (db.session = null));
     this.emit();

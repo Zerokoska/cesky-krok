@@ -1,28 +1,44 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Logo } from '../components/Icon';
+import { Icon, Logo } from '../components/Icon';
 import { ErrorBox } from '../components/ui';
+import { ROLE_LOGIN } from '../config';
 import { useApp } from '../data/context';
 import { LocalDataStore } from '../data/local';
+import type { Role } from '../data/types';
+
+const ROLES: { role: Role; label: string; hint: string }[] = [
+  { role: 'teacher', label: 'Вчитель', hint: 'методичка, ключі, результати' },
+  { role: 'student', label: 'Учениця', hint: 'уроки, вправи, домашка' },
+];
 
 export function Login() {
   const { store, profile, ready } = useApp();
-  const [mode, setMode] = useState<'in' | 'up'>('in');
-  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<Role | null>(null);
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (ready && profile) return <Navigate to="/" replace />;
 
+  const local = store instanceof LocalDataStore ? store : null;
+
+  const pick = (r: Role) => {
+    if (local) {
+      local.loginAs(r);
+      return;
+    }
+    setRole(r);
+    setError(null);
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!role) return;
     setBusy(true);
     setError(null);
     try {
-      if (mode === 'in') await store.signIn(email.trim(), password);
-      else await store.signUp(email.trim(), password, name.trim());
+      await store.signIn(ROLE_LOGIN[role], password);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -33,45 +49,38 @@ export function Login() {
   return (
     <div className="login-wrap">
       <div className="card login stack">
-        <div className="row">
-          <span className="logo" style={{ fontSize: '1.3rem' }}>
-            <Logo /> Krok za krokem
-          </span>
-        </div>
+        <span className="logo" style={{ fontSize: '1.3rem' }}>
+          <Logo /> Krok za krokem
+        </span>
         <p className="muted" style={{ margin: 0 }}>
           Česky krok za krokem 1 — уроки, аудіо, вправи й домашка.
         </p>
+        {local && <div className="note small">Локальний режим: дані зберігаються лише в цьому браузері.</div>}
 
-        {store instanceof LocalDataStore ? (
-          <div className="stack">
-            <div className="note small">Локальний режим (без сервера): дані зберігаються лише в цьому браузері.</div>
-            <button type="button" className="btn primary" onClick={() => store.loginAs('teacher')}>
-              Увійти як вчитель
-            </button>
-            <button type="button" className="btn" onClick={() => store.loginAs('student')}>
-              Увійти як учень
-            </button>
+        {!role ? (
+          <div className="stack" style={{ gap: 10 }}>
+            <b>Хто ви?</b>
+            {ROLES.map((r) => (
+              <button key={r.role} type="button" className="btn role-btn" onClick={() => pick(r.role)}>
+                <span>
+                  <span className="role-name">{r.label}</span>
+                  <span className="muted small">{r.hint}</span>
+                </span>
+                <Icon name="chevron" />
+              </button>
+            ))}
           </div>
         ) : (
           <form className="stack" onSubmit={submit}>
-            <div className="seg" style={{ alignSelf: 'flex-start' }}>
-              <button type="button" className={mode === 'in' ? 'on' : ''} onClick={() => setMode('in')}>
-                Вхід
-              </button>
-              <button type="button" className={mode === 'up' ? 'on' : ''} onClick={() => setMode('up')}>
-                Перша реєстрація
+            <div className="row">
+              <b>{ROLES.find((r) => r.role === role)?.label}</b>
+              <span className="spacer" />
+              <button type="button" className="btn small ghost" onClick={() => setRole(null)}>
+                <Icon name="back" size={14} /> Інша роль
               </button>
             </div>
-            {mode === 'up' && (
-              <label className="field">
-                Ім'я
-                <input className="input" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />
-              </label>
-            )}
-            <label className="field">
-              Email
-              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-            </label>
+            {/* Hidden username lets password managers remember the right password per role. */}
+            <input type="text" name="username" autoComplete="username" value={ROLE_LOGIN[role]} readOnly hidden />
             <label className="field">
               Пароль
               <input
@@ -80,15 +89,17 @@ export function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={8}
-                autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
+                autoFocus
+                autoComplete="current-password"
               />
             </label>
-            {mode === 'up' && <p className="muted small" style={{ margin: 0 }}>Реєстрація відкрита лише для запрошених email.</p>}
             {error && <ErrorBox error={error} />}
-            <button className="btn primary" disabled={busy}>
-              {busy ? 'Зачекайте…' : mode === 'in' ? 'Увійти' : 'Зареєструватися'}
+            <button className="btn primary" disabled={busy || !password}>
+              {busy ? 'Зачекайте…' : 'Увійти'}
             </button>
+            <p className="muted small" style={{ margin: 0 }}>
+              Вхід потрібен один раз на кожному пристрої — далі застосунок пам’ятає.
+            </p>
           </form>
         )}
       </div>

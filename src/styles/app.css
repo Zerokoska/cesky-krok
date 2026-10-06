@@ -1380,6 +1380,25 @@ textarea.input {
   width: min(420px, 100%);
 }
 
+.role-btn {
+  justify-content: space-between;
+  text-align: left;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  min-height: 64px;
+}
+
+.role-btn > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
 @media (max-width: 600px) {
   .topbar-inner {
     gap: 8px;

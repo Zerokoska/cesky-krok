@@ -58,10 +58,9 @@ function check<T>(res: { data: T | null; error: { message: string } | null }): T
 }
 
 function friendlyAuthError(message: string): string {
-  if (/database error saving new user/i.test(message)) return 'Цей email не має доступу до застосунку.';
-  if (/invalid login credentials/i.test(message)) return 'Неправильний email або пароль.';
-  if (/already registered/i.test(message)) return 'Цей email уже зареєстровано — увійдіть.';
-  if (/password should be at least/i.test(message)) return 'Пароль має бути щонайменше 8 символів.';
+  if (/invalid login credentials/i.test(message)) return 'Неправильний пароль.';
+  if (/rate limit|too many/i.test(message)) return 'Забагато спроб. Зачекайте хвилину.';
+  if (/failed to fetch|network/i.test(message)) return 'Немає з’єднання з сервером. Перевірте інтернет.';
   return message;
 }
 
@@ -127,16 +126,6 @@ export class SupabaseDataStore implements DataStore {
       throw new Error(`Вхід виконано, але профіль не завантажився: ${e instanceof Error ? e.message : e}. Спробуйте ще раз.`);
     }
     if (!profile) throw new Error('Профіль не знайдено. Зверніться до вчителя.');
-  }
-
-  async signUp(email: string, password: string, displayName: string) {
-    const { data, error } = await this.sb.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: displayName } },
-    });
-    if (error) throw new Error(friendlyAuthError(error.message));
-    if (!data.session) await this.signIn(email, password);
   }
 
   async signOut() {
