@@ -219,7 +219,7 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-enable_signup = false
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
@@ -375,8 +375,8 @@ allow_dynamic_registration = false
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
-# `per_worker` (default) РІР‚вЂќ enables hot reload during local development.
-# `oneshot` РІР‚вЂќ fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
+# `per_worker` (default) Р Р†Р вЂљРІР‚Сњ enables hot reload during local development.
+# `oneshot` Р Р†Р вЂљРІР‚Сњ fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
 policy = "per_worker"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083
